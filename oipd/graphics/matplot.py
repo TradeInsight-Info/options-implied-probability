@@ -7,6 +7,7 @@ from matplotlib import pyplot
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 from numpy import linspace, ndarray
+from pandas import DataFrame
 
 from oipd.core import calculate_quartiles
 
@@ -14,14 +15,22 @@ pyplot.rcParams["axes.autolimit_mode"] = "round_numbers"
 
 
 def generate_pdf_figure(
-    density_function: Tuple[ndarray],
+    density_function: Union[Tuple[ndarray], DataFrame],
     *,
     security_ticker: str,
     expiry_date: datetime,
     current_price: Optional[Union[float, bool]] = False,
 ) -> Figure:
     fig, ax = pyplot.subplots()
-    ax.plot(density_function[0], density_function[1])
+    
+    if isinstance(density_function, DataFrame):
+        price = density_function["Price"]
+        probability = density_function["PDF"]
+    else:
+        price = density_function[0]
+        probability = density_function[1]
+    
+    ax.plot(price, probability, label="Implied PDF", color="cyan", alpha=0.7)
     ax.set_title(
         f"Probability Density Function of the price of"
         f"\n{security_ticker} on {expiry_date}"
