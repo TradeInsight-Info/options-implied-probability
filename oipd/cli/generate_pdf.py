@@ -1,8 +1,10 @@
-from oipd.core import calculate_pdf, calculate_cdf, fit_kde
-from oipd.io import CSVReader
-import pandas as pd
-from traitlets import Bool
 from typing import Optional
+
+from pandas import DataFrame
+from traitlets import Bool
+
+from oipd.core import calculate_pdf_and_cdf
+from oipd.io import CSVReader
 
 
 def run(
@@ -14,7 +16,7 @@ def run(
     save_to_csv: Optional[Bool] = False,
     output_csv_path: Optional[str] = None,
     solver_method: Optional[str] = "brent",
-) -> pd.DataFrame:
+) -> DataFrame:
     """
     Runs the OIPD price distribution estimation using option market data.
 
@@ -44,23 +46,16 @@ def run(
 
     reader = CSVReader()
     options_data = reader.read(input_csv_path)
-    pdf_point_arrays = calculate_pdf(
-        options_data, current_price, days_forward, risk_free_rate, solver_method
-    )
-
-    # Fit KDE to normalize PDF if desired
-    if fit_kernel_pdf:
-        pdf_point_arrays = fit_kde(
-            pdf_point_arrays
-        )  # Ensure this returns a tuple of arrays
-
-    cdf_point_arrays = calculate_cdf(pdf_point_arrays)
-
-    priceP, densityP = pdf_point_arrays
-    priceC, densityC = cdf_point_arrays
 
     # Convert results to DataFrame
-    df = pd.DataFrame({"Price": priceP, "PDF": densityP, "CDF": densityC})
+    df = calculate_pdf_and_cdf(
+        options_data,
+        current_price,
+        days_forward,
+        risk_free_rate,
+        solver_method,
+        fit_kernel_pdf,
+    )
 
     # Save or return DataFrame
     if save_to_csv:
