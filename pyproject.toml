@@ -3,15 +3,14 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "oipd"
+name = "tradeinsight-oipd"
 version = "0.0.4"
 readme = "README.md"
 authors = [
-  { name="Henry Tian", email="tyrneh@gmail.com" },
-  { name="Jannic Holzer", email="jannic.holzer@gmail.com" },
+  { name="Tim", email="tim-hub@users.noreply.github.com" }
 ]
 license = {text = "MIT"}
-description = "Generate probability distributions on the future price of publicly traded securities using options data"
+description = "Fork of OIPD, Generate probability distributions on the future price of publicly traded securities using options data"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
