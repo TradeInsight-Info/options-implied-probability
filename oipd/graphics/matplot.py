@@ -22,15 +22,15 @@ def generate_pdf_figure(
     current_price: Optional[Union[float, bool]] = False,
 ) -> Figure:
     fig, ax = pyplot.subplots()
-    
+
     if isinstance(density_function, DataFrame):
         price = density_function["Price"]
         probability = density_function["PDF"]
     else:
         price = density_function[0]
         probability = density_function[1]
-    
-    ax.plot(price, probability, label="Implied PDF", color="cyan", alpha=0.7)
+
+    ax.plot(price, probability)
     ax.set_title(
         f"Probability Density Function of the price of"
         f"\n{security_ticker} on {expiry_date}"
@@ -60,7 +60,7 @@ def generate_pdf_figure(
 
 
 def generate_cdf_figure(
-    density_function: Tuple[ndarray],
+    density_function: Union[Tuple[ndarray], DataFrame],
     *,
     security_ticker: str,
     expiry_date: datetime,
@@ -75,7 +75,15 @@ def generate_cdf_figure(
         A Matplotlib Figure object of the generated graph
     """
     fig, ax = pyplot.subplots()
-    ax.plot(density_function[0], density_function[1])
+
+    if isinstance(density_function, DataFrame):
+        price = density_function["Price"]
+        probability = density_function["PDF"]
+    else:
+        price = density_function[0]
+        probability = density_function[1]
+
+    ax.plot(price, probability)
     ax.set_title(
         f"Cumulative Density Function of the price of"
         f"\n{security_ticker} on {expiry_date}"
