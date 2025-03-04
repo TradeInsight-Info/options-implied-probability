@@ -11,7 +11,7 @@ If you believe in the efficient market hypothesis, then the probability distribu
 
 
 <p align="center">
-    <img src=".meta/images/spy_output.png" width="60%">
+    <img src=".meta/images/spy.png" width="60%">
 </p>
 
 
@@ -38,38 +38,66 @@ The file [`example.ipynb`](example.ipynb) is supplied as a demo.
 
 <b>The user will need to specify 4 mandatory arguments:</b>
 
-1. `input_csv_path`: a string containing the file path of the options data in a csv, with the columns 'strike', 'last_price', 'bid, 'ask'
-2. `current_price`: a number of the underlying asset's current price
-3. `days_foward`: a number of the days between the current date and the strike date
-4. `risk_free_rate`: a number indicating the annual risk-free rate in nominal terms
+### **Mandatory Arguments:**
+1. `input_data`:  
+   - Can either be a `str`: a file path to a CSV, or a `pd.DataFrame`: a pandas DataFrame containing the options data
+   - The input data must contain at least the following columns: `'strike', 'last_price', 'bid', 'ask'`
 
-<b>There are 4 additional optional arguments:</b>
+2. `current_price`: A number representing the underlying asset's current price
 
-5. `fit_kernel_pdf`: (optional) a True or False boolean, indicating whether to fit a kernel-density estimator on the resulting raw probability distribution. Fitting a KDE may improve edge-behavior of the PDF. Default is False
-6. `save_to_csv`: (optional) a True or False boolean, where if True, the output will be saved to csv. Default is False
-7. `output_csv_path`: (optional) a string containing the file path where the user wishes to save the results
-8. `solver_method`: (optional) a string of either 'newton' or 'brent', indicating which solver to use. Default is 'brent'
+3. `days_forward`: A number representing the days between the current date and the strike date
+
+4. `risk_free_rate`: A number indicating the annual risk-free rate in nominal terms
+
+### **Optional Arguments:**
+5. `fit_kernel_pdf`: *(optional)*  
+   - A boolean (`True` or `False`). Default: `False`
+   - If `True`, fits a kernel-density estimator (KDE) on the raw probability distribution. KDE may improve edge-behavior of the PDF
+
+6. `save_to_csv`: *(optional)*  
+   - A boolean (`True` or `False`). Default: `False`
+   - If `True`, saves the output to a CSV file
+
+7. `output_csv_path`: *(optional)*  
+   - A string specifying the file path where the user wishes to save the results
+   - Required if `save_to_csv=True`
+
+8. `solver_method`: *(optional)*  
+   - A string indicating which solver to use
+   - Options: `'newton'` or `'brent'`. Default: `'brent'`
+
+9. `column_mapping`: *(optional)*  
+   - A dictionary mapping user-provided column names to the expected format, like so: `{"user_column_name": "expected_column_name"}`
+   - Example:  
+     ```python
+     column_mapping = {
+         "strike_price": "strike",
+         "last_price": "last_price",
+         "bid_price": "bid",
+         "ask_price": "ask"
+     }
+     ```
 
 <b>3 examples of options data is provided in the `data/` folder, downloaded from Yahoo Finance.</b>
 
 Note that oipd only uses call options data for now. 
 
 ```python
-from oipd import cli
+import oipd.generate_pdf as op
 
 # Example - SPY
 input_csv_path = "path_to_your_options_data_csv"
-current_price = 604.44
-current_date = "2025-01-28"
-strike_date = "2025-02-28"
+current_price = 593.83
+current_date = "2025-03-03"
+strike_date = "2025-05-16"
 # Convert the strings to datetime objects
 current_date_dt = datetime.strptime(current_date, "%Y-%m-%d")
 strike_date_dt = datetime.strptime(strike_date, "%Y-%m-%d")
 # Calculate the difference in days
 days_difference = (strike_date_dt - current_date_dt).days
 
-spy_pdf = cli.generate_pdf.run(
-    input_csv_path=input_csv_path,
+spy_pdf = op.run(
+    input_data=input_csv_path,
     current_price=float(current_price),
     days_forward=int(days_difference),
     risk_free_rate=0.03,
@@ -80,10 +108,16 @@ spy_pdf = cli.generate_pdf.run(
 
 <b>Another interesting example is US Steel:</b>
 <p align="center">
-    <img src=".meta/images/ussteel_output.png" width="60%">
+  <img src=".meta/images/ussteel.png" width="60%">
 </p>
+The distribution is bimodal, and given Nippon Steel’s proposed $55 per share acquisition, it can be thought of as two overlapping scenarios:
 
-The market appears to expect a significant rise in U.S. Steel’s share price by December 2025, likely reflecting a consensus that federal regulators will approve Nippon Steel’s proposed $55 per share acquisition.
+1. Acquisition is approved:
+   - In this scenario, the share price would likely move above the $55 per share offer. This creates a “second peak” in the distribution
+   - By inspecting the cumulative prbability table (see [example.ipynb](example.ipynb)), we see there's a 33% probability that the deal is approved and price rises above $55
+
+2. Acquisition falls apart:
+   - Without the approval, the share price may drop back toward a level driven by “business as usual” fundamentals—here, that appears lower than the current $39.39. This is the “first peak” in the distribution
 
 <i>Note that the domain (x-axis) is limited in this graph, due to (1) not many strike prices exist for US Steel, and (2) some extreme ITM/OTM options did not have solvable IVs.</i>
 
@@ -127,9 +161,25 @@ Feedback is most welcome! I'd love to hear about how you make use of this inform
 
 Contributions are also welcome. Please fork the repository, make your changes, and submit a pull request.
 
+## Roadmap
+
+The methodology in this package is a basic implementation, and more rigour is necessary for professional use. I will work on these features when I have free time, and contributions to the following would be welcome:
+
+1. Dividend handling in the current Black-Scholes Model
+
+2. Improved support for American options
+   - Currently, all options are assumed to be European for simplicity. To better support American options:
+      - Implement a method to "de-Americanize" American options in order to be compatible with the existing Black-Scholes implementation, or
+      - Add an American options pricing model. However with an American model, the current method (using the second derivative to derive the probability density function) is no longer valid, so a new approach would need to be discovered
+
+3. Integration of alternative pricing models
+   - Offer the choice among different models, including the following suggestions from users:
+      - Heston
+      - Jump-Diffusion
+      - Binomial Tree
 
 ## License
 
-This project is a preview, it is not currently licensed. Not financial advice.
+DISCLAIMER: This software is provided for informational and educational purposes only and does not constitute financial advice. Use it at your own risk. The author is not responsible for any financial losses or damages resulting from its use. Always consult with a qualified financial professional before making any financial decisions.
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
